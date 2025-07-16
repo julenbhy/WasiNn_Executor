@@ -1,5 +1,5 @@
 use wasi_nn_server::handlers::{init, destroy, run};
-use wasmtime_nn::Wasmtime as SelectedRuntime;
+use wasmtime_nn::WasmtimeRuntime as SelectedRuntime;
 
 use tide::log;
 

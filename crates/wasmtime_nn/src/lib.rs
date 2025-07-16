@@ -1,2 +1,2 @@
 mod wasmtime;
-pub use crate::wasmtime::Wasmtime;
+pub use crate::wasmtime::WasmtimeRuntime;

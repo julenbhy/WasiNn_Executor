@@ -5,19 +5,19 @@ use common::nn_utils::{ NnWasmCtx, link_host_functions, create_store,
     pass_input, retrieve_result, download_model, pass_model };
 
 #[derive(Clone)]
-pub struct Wasmtime {
+pub struct WasmtimeRuntime {
     pub engine: Engine,
 }
 
-impl Default for Wasmtime {
+impl Default for WasmtimeRuntime {
     fn default() -> Self {
-        Wasmtime {
+        WasmtimeRuntime {
             engine: Engine::default(),
         }
     }
 }
 
-impl WasmRuntime for Wasmtime {
+impl WasmRuntime for WasmtimeRuntime {
 
     fn initialize(
         &self,
@@ -223,14 +223,17 @@ fn run_model_stage(
                         //value["model_index"] = serde_json::Value::Number(serde_json::Number::from(index));
                         pass_input(instance, &mut store, &value)?;
                         
-                        //instance.get_typed_func::<(), u32>(&mut store, "preprocess_export")?
-                        //    .call(&mut store, ())?;
-
+                        /* 
+                        instance.get_typed_func::<(), u32>(&mut store, "preprocess_export")?
+                            .call(&mut store, ())
+                            .map_err(|e| anyhow::anyhow!("Failed to call preprocess_export: {}", e))?;
+                        */
                         if let Err(e) = instance.get_typed_func::<(), u32>(&mut store, "preprocess_export")?
                             .call(&mut store, ()) {
                             eprintln!("preprocess failed: {:?}", e);
                             break;
                         }
+                        
                     }
                     Err(_) => { // Input channel closed → end of processing
                         //log::info!("STAGE {}: Input channel closed", index);
