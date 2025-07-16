@@ -1,0 +1,75 @@
+[package]
+name = "wasi_nn_server"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+description = "Server for the WasiNn inference"
+license = "Apache-2.0 WITH LLVM-exception"
+categories = ["wasm"]
+keywords = ["webassembly", "wasm"]
+rust-version.workspace = true
+
+
+
+[dependencies]
+tokio.workspace = true
+tide.workspace = true
+anyhow.workspace = true
+serde_json.workspace = true
+
+common.workspace = true
+wasmtime_nn.workspace = true
+wasmtime.workspace = true
+thiserror.workspace = true
+log.workspace = true
+
+
+[workspace]
+members = [ "crates/common","crates/wasmtime_nn", "action-builder"]
+
+[workspace.package]
+version = "1.0.0"
+authors = ["The Wasmtime Project Developers"]
+edition = "2024"
+rust-version = "1.88.0"
+
+[workspace.dependencies]
+# My custom crates
+common = { path = "crates/common", version = "=1.0.0" }
+wasmtime_nn = { path = "crates/wasmtime_nn", version = "=1.0.0" }
+
+# Dependencies
+tokio = { version = "1.44.0", features = ["full"] }
+tide = { version = "0.16.0" }
+anyhow = "1.0.98"
+serde_json = "1.0.140"
+serde = "1.0.219"
+zip = "4.3.0"
+base64 = "0.22.1"
+log = "0.4"
+reqwest = "0.12.22"
+
+wasmtime = "34.0.1"
+wasmtime-wasi = "34.0.1"
+#wasmtime-wasi-nn = "34.0.1"
+#Crates for the wasmtime-wasi-nn modified version
+wasmtime-wasi-nn = { path = "crates/wasi-nn", version = "34.0.0", features = ["pytorch"]  }
+wiggle = "34.0.1" # Must be the same version as wasmtime
+thiserror = "1.0.43"
+tracing = "0.1.26"
+cap-std = "3.4.1"
+libtest-mimic = "0.7.0"
+tracing-subscriber = { version = "0.3.1", default-features = false, features = ['fmt', 'env-filter', 'ansi', 'tracing-log'] }
+walkdir = "2.3.3"
+
+
+[workspace.lints.rust]
+# Turn on some lints which are otherwise allow-by-default in rustc.
+unused_extern_crates = 'warn'
+trivial_numeric_casts = 'warn'
+unstable_features = 'warn'
+unused_import_braces = 'warn'
+unused-lifetimes = 'warn'
+unused-macro-rules = 'warn'
+
+

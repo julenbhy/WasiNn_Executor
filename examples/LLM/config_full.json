@@ -1,0 +1,366 @@
+{
+    "imagenet_classes_url": "https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt",
+
+    "flop_based": {
+
+        "gpt2": {
+            "1_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/1/0.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/1/info.json"
+            },
+            "2_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/2/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/2/1.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/2/info.json"
+            },
+            "3_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/3/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/3/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/3/2.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/3/info.json"
+            },
+            "4_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/4/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/4/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/4/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/4/3.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/4/info.json"
+            },
+            "5_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/5/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/5/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/5/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/5/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/5/4.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/5/info.json"
+            },  
+            "6_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/6/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/6/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/6/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/6/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/6/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/6/5.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/6/info.json"
+            },
+            "7_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/7/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/7/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/7/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/7/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/7/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/7/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/7/6.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/7/info.json"
+            },
+            "8_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/8/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/8/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/8/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/8/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/8/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/8/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/8/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/8/7.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/8/info.json"
+            },
+            "9_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/9/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/9/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/9/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/9/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/9/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/9/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/9/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/9/7.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/9/8.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/9/info.json"
+            },
+            "10_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/10/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/10/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/10/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/10/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/10/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/10/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/10/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/10/7.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/10/8.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/10/9.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/10/info.json"
+            },
+            "11_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/11/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/11/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/11/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/11/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/11/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/11/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/11/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/11/7.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/11/8.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/11/9.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/11/10.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/11/info.json"
+            },
+            "12_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/7.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/8.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/9.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/10.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/11.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/12/info.json"
+            },
+            "13_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/7.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/8.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/9.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/10.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/11.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/12.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/13/info.json"
+            },
+            "14_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/7.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/8.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/9.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/10.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/11.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/12.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/14/13.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/gpt2/1/info.json"
+            }
+        }
+    },
+
+    "param_based": {
+
+        "gpt2": {
+            "1_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/1/0.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/1/info.json"
+            },
+            "2_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/2/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/2/1.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/2/info.json"
+            },
+            "3_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/3/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/3/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/3/2.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/3/info.json"
+            },
+            "4_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/4/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/4/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/4/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/4/3.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/4/info.json"
+            },
+            "5_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/5/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/5/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/5/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/5/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/5/4.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/5/info.json"
+            },  
+            "6_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/6/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/6/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/6/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/6/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/6/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/6/5.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/6/info.json"
+            },
+            "7_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/7/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/7/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/7/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/7/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/7/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/7/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/7/6.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/7/info.json"
+            },
+            "8_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/8/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/8/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/8/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/8/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/8/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/8/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/8/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/8/7.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/8/info.json"
+            },
+            "9_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/9/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/9/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/9/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/9/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/9/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/9/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/9/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/9/7.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/9/8.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/9/info.json"
+            },
+            "10_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/10/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/10/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/10/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/10/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/10/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/10/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/10/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/10/7.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/10/8.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/10/9.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/10/info.json"
+            },
+            "11_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/11/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/11/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/11/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/11/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/11/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/11/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/11/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/11/7.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/11/8.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/11/9.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/11/10.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/11/info.json"
+            },
+            "12_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/7.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/8.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/9.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/10.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/11.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/12/info.json"
+            },
+            "13_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/7.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/8.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/9.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/10.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/11.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/12.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/13/info.json"
+            },
+            "14_step": {
+                "model_urls": [
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/0.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/1.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/2.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/3.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/4.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/5.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/6.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/7.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/8.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/9.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/10.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/11.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/12.pt",
+                "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/14/13.pt"
+                ],
+                "model_metadata_url": "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/params-based/gpt2/1/info.json"
+            }
+        }
+    }
+  }
+  

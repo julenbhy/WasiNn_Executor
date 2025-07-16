@@ -1,0 +1,14 @@
+[package]
+name = "wasmtime_nn"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+common.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+wasmtime.workspace = true
+wasmtime-wasi.workspace = true
+wasmtime-wasi-nn.workspace = true
