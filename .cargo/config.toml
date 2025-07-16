@@ -1,4 +1,1 @@
 [alias]     # command aliases
-set_torch = "run --manifest-path ./ow-invoker/Cargo.toml"
-nn = "run --manifest-path ./ow-invoker/Cargo.toml --features wasmtime_nn"
-nn_pipeline = "run --manifest-path ./ow-invoker/Cargo.toml --features wasmtime_nn_pipeline"
