@@ -1,24 +1,43 @@
-use common::{ActionCapabilities, WasmRuntime};
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::Mutex;
 
+
+use common::{ActionCapabilities, WasmRuntime};
 use wasmtime::{ Engine, Linker, Module, Store, InstancePre, Instance };
 use common::nn_utils::{ NnWasmCtx, link_host_functions, create_store, 
-    pass_input, retrieve_result, download_model, pass_model };
+    pass_input, retrieve_result, download_model, pass_model, download_inputs };
 
-#[derive(Clone)]
 pub struct WasmtimeRuntime {
     pub engine: Engine,
+    pipelines: Arc<Mutex<HashMap<String, WasiNnPipeline>>>,
 }
 
 impl Default for WasmtimeRuntime {
     fn default() -> Self {
         WasmtimeRuntime {
             engine: Engine::default(),
+            pipelines: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+}
+
+impl Clone for WasmtimeRuntime {
+    fn clone(&self) -> Self {
+        WasmtimeRuntime {
+            engine: self.engine.clone(),
+            pipelines: Arc::clone(&self.pipelines),
         }
     }
 }
 
 impl WasmRuntime for WasmtimeRuntime {
 
+    /// Receives a container ID, capabilities, and a precompiled module,
+    /// Capabilities include model URLs for downloading the multiple model parts of a model
+    /// A pipeline is created. Each model part is executed on a separate thread.
+    /// The threads will keep running for serving /run requests.
+    /// Each pipeline is stored in a HashMap indexed by the container ID.
     fn initialize(
         &self,
         container_id: String,
@@ -26,52 +45,65 @@ impl WasmRuntime for WasmtimeRuntime {
         module: Vec<u8>,
     ) -> anyhow::Result<()> {
 
-        // Deserialize the precompiled module
-        let module = unsafe{ Module::deserialize(&self.engine, &module).map_err(|e| {
-            anyhow::anyhow!("Failed to deserialize module for container {}: {}", container_id, e)
-        })?};
+        // Deserialize WASM module
+        let module = unsafe { Module::deserialize(&self.engine, &module)
+            .map_err(|e| anyhow::anyhow!("Failed to deserialize module {}: {}", container_id, e))? };
 
-        // Create a linker with wasi_p1 and wasi_nn contexts
+        // Link host functions
         let mut linker: Linker<NnWasmCtx> = Linker::new(&self.engine);
         link_host_functions(&mut linker)?;
 
-        // Generate an instance_pre to avoid repeated type checks
-        // in the multiple threads that will run the model.
+        // Pre-instantiate
         let instance_pre = linker.instantiate_pre(&module)?;
 
-        // Get the list of model URLs
-        let model_urls = capabilities.model_urls.as_ref().ok_or_else(|| {
-            anyhow::anyhow!("Model URLs are required to set up the pipeline")
-        })?;
+        // Get model URLs
+        let model_urls = capabilities.model_urls.as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Model URLs required"))?;
 
-        setup_pipeline(&self.engine, instance_pre, model_urls)?;
+        // Setup pipeline
+        let pipeline = WasiNnPipeline::setup_pipeline(&self.engine, instance_pre, model_urls)?;
 
-
+        // Store pipeline
+        self.pipelines.lock().unwrap().insert(container_id, pipeline);
         Ok(())
     }
 
+    /// Sends input parameters to the first stage of the pipeline, which is already running.
+    /// The parameters are passed to the first stage of the pipeline.
+    /// Collects the output from the last stage and returns it as a JSON value.
     fn run(
         &self,
-        _container_id: &str,
-        _parameters: serde_json::Value,
+        container_id: &str,
+        mut parameters: serde_json::Value,
     ) -> anyhow::Result<serde_json::Value> {
 
-        Ok(serde_json::json!({ "result": "success" }))
+        let pipelines = self.pipelines.lock().unwrap();
+        let pipeline = pipelines.get(container_id)
+            .ok_or_else(|| anyhow::anyhow!("Pipeline not found: {}", container_id))?;
+
+        download_inputs(&mut parameters)?;
+        let result = pipeline.run_pipeline(parameters)?;
+        Ok(result)
     }
 
-
+    /// Destroys the pipeline associated with the given container ID.
+    /// This function is called when the container is no longer needed.
+    /// It cleans up resources and stops any running threads.
     fn destroy(
         &self,
-        container_id: &str
+        container_id: &str,
     ) {
-        println!("Destroying container: {}", container_id);
+        if let Some(pipeline) = self.pipelines.lock().unwrap().remove(container_id) {
+            pipeline.stop_pipeline();
+        }
+        println!("Destroyed: {}", container_id);
     }
 }
 
 // Input and output channels for each model stage
 // The first stage receives JSON input, the last stage outputs JSON,
 // and the middle stages receive and output tensors.
-use std::sync::mpsc::{Sender as StdSender, Receiver as StdReceiver, channel};
+use std::{sync::mpsc::{channel, Receiver as StdReceiver, Sender as StdSender}, thread::JoinHandle};
 use wasmtime_wasi_nn::Tensor;
 enum InputChannel {
     Json(StdReceiver<serde_json::Value>),
@@ -80,12 +112,6 @@ enum InputChannel {
 enum OutputChannel {
     Json(StdSender<serde_json::Value>),
     Tensor(StdSender<Tensor>),
-}
-struct WasiNnPipelineStep {
-    input_channel: InputChannel,
-    output_channel: OutputChannel,
-    instance: Instance,
-    store: Store<NnWasmCtx>
 }
 
 
@@ -100,56 +126,59 @@ struct WasiNnPipelineStep {
 /// The function is designed to handle multiple model stages, where each stage can run in its own thread.
 /// The input to the first stage is JSON, and the output of the last stage is also JSON.
 /// The middle stages receive tensors and output tensors to the next stage.
-fn setup_pipeline(
-    engine: &Engine,
-    instance_pre: InstancePre<NnWasmCtx>,
-    model_urls: &[String]
-) -> anyhow::Result<()> {
-    
-    println!("\x1b[31mWASMTIME\x1b[0m Setting up pipeline with model URLs: {:?}", model_urls);
+pub struct WasiNnPipeline {
+    steps: Vec<JoinHandle<anyhow::Result<()>>>,
+    input_tx: StdSender<serde_json::Value>,
+    output_rx: StdReceiver<serde_json::Value>,
+}
+impl WasiNnPipeline {
+    pub fn setup_pipeline(
+        engine: &Engine,
+        instance_pre: InstancePre<NnWasmCtx>,
+        model_urls: &[String]
+    ) -> anyhow::Result<WasiNnPipeline> {
+        println!("\x1b[31mWASMTIME\x1b[0m Pipeline: {:?}", model_urls);
 
-    // Create initial and final channels for communication between threads
-    let (initial_sender, initial_receiver_raw) = channel::<serde_json::Value>();
-    let mut initial_receiver = Some(initial_receiver_raw);
+        let (initial_tx, initial_rx) = channel::<serde_json::Value>();
+        let mut prev_rx_json = Some(initial_rx);
+        let (final_tx, final_rx) = channel::<serde_json::Value>();
+        let mut prev_tx_json = Some(final_tx);
 
-    // Final channel to receive JSON output (last stage)
-    let (final_sender_raw, final_receiver) = channel::<serde_json::Value>();
-    let mut final_sender = Some(final_sender_raw);
+        let mut prev_rx_tensor: Option<StdReceiver<Tensor>> = None;
+        let mut handles = Vec::new();
 
-    let mut receiver = None;
-    let mut handles = vec![];
+        for (i, url) in model_urls.iter().enumerate() {
+            let (in_chan, out_chan, next_rx_tensor) = setup_stage_channels(
+                i, model_urls.len(), &mut prev_rx_json, &mut prev_tx_json, prev_rx_tensor.take()
+            )?;
 
-    // Iterate through each model URL to set up the pipeline
-    for (stage_idx, model_url) in model_urls.iter().enumerate() {
-        println!("\x1b[31mWASMTIME\x1b[0m Setting up stage {} with model URL: {}", stage_idx, model_url);
+            let engine_c = engine.clone();
+            let inst_c = instance_pre.clone();
+            let url_c = url.clone();
+            let handle = std::thread::spawn(move || {
+                setup_pipeline_step(i, &engine_c, inst_c, url_c, in_chan, out_chan)
+            });
+            handles.push(handle);
+            prev_rx_tensor = Some(next_rx_tensor);
+        }
 
-        // Set up the input and output channels for this stage
-        let (input_channel, output_channel, next_receiver) = setup_stage_channels(
-            stage_idx,
-            model_urls.len(),
-            &mut initial_receiver,
-            &mut final_sender,
-            receiver,
-        )?;
-
-        let engine_clone = engine.clone();
-        let instance_pre_clone = instance_pre.clone();
-        let model_url_clone = model_url.clone();
-
-        // Spawn the thread for this stage
-        let handle = std::thread::spawn(move || {
-            setup_pipeline_step(stage_idx, &engine_clone, instance_pre_clone, model_url_clone, input_channel, output_channel)
-        });
-        
-        // Store the handle for later use
-        handles.push(handle);
-
-        // Move the receiver to the next stage
-        receiver = Some(next_receiver);
+        Ok(WasiNnPipeline { steps: handles, input_tx: initial_tx, output_rx: final_rx })
     }
 
+    pub fn run_pipeline(&self, params: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+        self.input_tx.send(params)?;
+        let out = self.output_rx.recv()?;
+        Ok(out)
+    }
 
-    Ok(())
+    pub fn stop_pipeline(self) {
+        drop(self.input_tx);
+        for handle in self.steps {
+            if let Err(e) = handle.join() {
+                println!("Error stopping pipeline thread: {:?}", e);
+            }
+        }
+    }
 }
 
 
@@ -171,24 +200,26 @@ fn setup_pipeline_step(
 
     // Obtain the instance from the preinstance
     let instance = instance_pre.instantiate(&mut store)
-        .map_err(|e| anyhow::anyhow!("Failed to instantiate WASM module: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("Step {}: Failed to instantiate WASM module: {}", stage_idx, e))?;
 
     // Download the model from the provided URL
     let model_bytes = download_model(&model_url)
-        .map_err(|e| anyhow::anyhow!("Failed to download model from {}: {}", model_url, e))?;
+        .map_err(|e| anyhow::anyhow!("Step {}: Failed to download model from {}: {}", stage_idx, model_url, e))?;
 
     // Write the model to the WASM memory
     pass_model(&instance, &mut store, model_bytes)
-        .map_err(|e| anyhow::anyhow!("Failed to pass model to WASM instance: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("Step {}: Failed to pass model to WASM instance: {}", stage_idx, e))?;
 
     // Call the "build_context" function in the WASM instance
     instance.get_typed_func::<(), u32>(&mut store, "build_context")
-        .map_err(|_| anyhow::anyhow!("EXECUTOR ERROR: Failed to get build_context from model: {}", model_url))?
+        .map_err(|_| anyhow::anyhow!("Step {}: Failed to get build_context from model: {}", stage_idx, model_url))?
         .call(&mut store, ())?;
+
+    println!("\x1b[31mWASMTIME\x1b[0m Step {}: Context built successfully", stage_idx);
 
     // Run the model stage with the input and output channels
     run_model_stage(stage_idx, &instance, &mut store, input_channel, output_channel)
-        .map_err(|e| anyhow::anyhow!("Failed to run model stage: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("Step {}: Failed to run model stage: {}", stage_idx, e))?;
 
     Ok(())
 }
@@ -213,21 +244,13 @@ fn run_model_stage(
         // 3. Receive input for this stage
         match &mut input_channel {
             InputChannel::Json(receiver) => { // The first stage receives JSON input
-                //log::info!("STAGE {}: Waiting for JSON input", index);
-                println!("\x1b[31mWASMTIME\x1b[0m STAGE: Waiting for JSON input");
+                println!("\x1b[31mWASMTIME\x1b[0m Step {}: Waiting for JSON input", stage_idx);
                 match receiver.recv() {
                     Ok(mut value) => { // Received JSON input
-                        //log::info!("STAGE {}: Received JSON input", index);
-                        println!("\x1b[31mWASMTIME\x1b[0m STAGE: Received JSON input");
+                        println!("\x1b[31mWASMTIME\x1b[0m Step {}: Received JSON input", stage_idx);
 
-                        //value["model_index"] = serde_json::Value::Number(serde_json::Number::from(index));
                         pass_input(instance, &mut store, &value)?;
                         
-                        /* 
-                        instance.get_typed_func::<(), u32>(&mut store, "preprocess_export")?
-                            .call(&mut store, ())
-                            .map_err(|e| anyhow::anyhow!("Failed to call preprocess_export: {}", e))?;
-                        */
                         if let Err(e) = instance.get_typed_func::<(), u32>(&mut store, "preprocess_export")?
                             .call(&mut store, ()) {
                             eprintln!("preprocess failed: {:?}", e);
@@ -235,26 +258,21 @@ fn run_model_stage(
                         }
                         
                     }
-                    Err(_) => { // Input channel closed → end of processing
-                        //log::info!("STAGE {}: Input channel closed", index);
-                        println!("\x1b[31mWASMTIME\x1b[0m STAGE: Input channel closed");
+                    Err(e) => { // Input channel closed → end of processing
+                        println!("\x1b[31mWASMTIME\x1b[0m Step {}: Input channel closed: {:?}", stage_idx, e);
                         break;
                     }
                 }
             },
             InputChannel::Tensor(receiver) => { // Middle and last stages receive tensor input
-                //log::info!("STAGE {}: Waiting for tensor input", index);
-                println!("\x1b[31mWASMTIME\x1b[0m STAGE: Waiting for tensor input");
+                println!("\x1b[31mWASMTIME\x1b[0m Step {}: Waiting for tensor input", stage_idx);
                 match receiver.recv() {
                     Ok(tensor) => { // Received tensor input
-                        //log::info!("STAGE {}: Received tensor input", index);
-                        println!("\x1b[31mWASMTIME\x1b[0m STAGE: Received tensor input");
-                        // Set input tensor for WASI-NN context
+                        println!("\x1b[31mWASMTIME\x1b[0m Step {}: Received tensor input", stage_idx);
                         store.data_mut().wasi_nn().set_input_tensor(0, 0, tensor)?;
                     }
-                    Err(_) => { // Input channel closed → end of processing
-                        //log::info!("STAGE {}: Input channel closed", index);
-                        println!("\x1b[31mWASMTIME\x1b[0m STAGE: Input channel closed");
+                    Err(e) => { // Input channel closed → end of processing
+                        println!("\x1b[31mWASMTIME\x1b[0m Step {}: Input channel closed: {:?}", stage_idx, e);
                         break;
                     }
                 }
@@ -262,11 +280,8 @@ fn run_model_stage(
         }
 
         // 4. Run inference
-        //log::info!("STAGE {}: Running inference", stage_idx);
-        println!("\x1b[31mWASMTIME\x1b[0m STAGE: Running inference");
+        println!("\x1b[31mWASMTIME\x1b[0m Step {}: Running inference", stage_idx);
 
-        //instance.get_typed_func::<(), u32>(&mut store, "compute")?
-        //    .call(&mut store, ())?;
         // Same but break the loop in case of an error
         if let Err(e) = instance.get_typed_func::<(), u32>(&mut store, "compute")?
             .call(&mut store, ()) {
@@ -278,16 +293,12 @@ fn run_model_stage(
         // 5. Send output to next stage
         match output_channel {
             OutputChannel::Tensor(ref sender) => { // Extract tensor from WASI-NN and send it to the next stage
-                //log::info!("STAGE {}: Sending tensor output", stage_idx);
-                println!("\x1b[31mWASMTIME\x1b[0m STAGE: Sending tensor output");
-
+                println!("\x1b[31mWASMTIME\x1b[0m Step {}: Sending tensor output", stage_idx);
                 let output_tensor = store.data_mut().wasi_nn().get_output_tensor(0, 0)?;
-
                 sender.send(output_tensor)?;
             }
             OutputChannel::Json(ref sender) => { // Retrieve final JSON output and send it to the final channel
-                //log::info!("STAGE {}: Sending JSON output", stage_idx);
-                println!("\x1b[31mWASMTIME\x1b[0m STAGE: Sending JSON output");
+                println!("\x1b[31mWASMTIME\x1b[0m Step {}: Sending JSON output", stage_idx);
 
                 // The parameters are also passed to the instance in case the user needs
                 // any of them in the postprocess function.
@@ -308,8 +319,7 @@ fn run_model_stage(
     }
 
     drop(output_channel); // Close the output channel to propagate end of processing
-    //log::info!("STAGE {}: Finished processing", stage_idx);
-    println!("\x1b[31mWASMTIME\x1b[0m STAGE: Finished processing");
+    println!("\x1b[31mWASMTIME\x1b[0m Step {}: Finished processing", stage_idx);
 
     Ok(()) 
 }
@@ -358,3 +368,4 @@ fn setup_stage_channels(
 
     Ok((input_channel, output_channel, next_receiver))
 }
+

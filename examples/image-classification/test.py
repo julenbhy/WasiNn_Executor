@@ -4,6 +4,8 @@ import time
 import base64
 import urllib.request
 import random
+import os
+import subprocess
 
 
 APIHOST='http://172.17.0.1:3233/api/v1'
@@ -17,26 +19,37 @@ def sync_call(action_name: str, params: dict):
     elapsed_time = time.time() - start_time
     return response.text, elapsed_time
 
-def async_call(action_name: str, params: dict):
-    url = APIHOST+'/namespaces/_/actions/'+action_name+'?blocking=false&result=true&workers=1'
 
-    start_time = time.time()
-    response = requests.post(url, json=params, headers=headers)
-    print('REQUEST:', response.request.__dict__)
-    data = json.loads(response.text)
-    activation_id = data["activationId"]
-    url = APIHOST+'/namespaces/_/activations/'+activation_id
+def update_action(action_name: str, zip_path: str, urls: list[str], parameters: list[str]):
+    """
+    Updates an OpenWhisk action with the given filename, model URLs and parameters.
 
-    # Wait until the worker completes the job
-    while True:
-        result = requests.get(url, headers=headers)
-        if result.status_code == 200:
-            break
-        time.sleep(0.001)
-        
-    elapsed_time = time.time() - start_time
-    result = json.loads(result.text)
-    return result['response']['result'], elapsed_time
+    Args:
+        filename (str): The name of the action to update.
+        urls (list[str]): A list of model URLs.
+        parameters (list[str]): A list of parameters.
+    """
+    # Prepare paths and strings
+    url_str = json.dumps(urls)  # '["https://...", ...]'
+    param_str = json.dumps(parameters)  # '["param1", ...]'
+
+    if not os.path.exists(zip_path):
+        raise FileNotFoundError(f"Action zip not found: {zip_path}")
+
+    cmd = [
+        "wsk", "action", "update",
+        "--kind", "wasm:0.1",
+        action_name,
+        zip_path,
+        "-a", "model_urls", url_str,
+        "-p", "parameters", param_str  # <- nota: typo copiado del original
+    ]
+
+    try:
+        subprocess.run(cmd, check=True)
+        print(f"Action '{action_name}' updated.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to update action '{action_name}': {e}")
 
 
 
@@ -46,13 +59,23 @@ def take_random_images(path, num_images):
     return random.sample(lines, num_images)
 
 def main():
+
+    action_name = 'pytorch_image_classification'
+
     # build the request json
-    num_parts = 2
+    num_parts = 3
 
     base_url = "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/squeezenet1_1"
     #base_url = "https://huggingface.co/pepecalero/TorchscriptSplitModels/resolve/main/flops-based/resnet50"
 
     model_urls = [f"{base_url}/{num_parts}/{i}.pt" for i in range(num_parts)]
+
+    # Generate fake parameters for the action
+    parameters = [f"param_{i}" for i in range(num_parts)]
+
+    # Update the action with the new model URLs
+    print(f"Updating action '{action_name}' with {len(model_urls)} model URLs")
+    update_action(action_name, f"actions/compiled/{action_name}.zip", model_urls, parameters)
 
     # Build the url to the model metadata
     model_metadata_url = f"{base_url}/{num_parts}/info.json"
@@ -80,8 +103,8 @@ def main():
                     "http://farm4.static.flickr.com/3196/3050927387_6374cedf8c.jpg", # goldfish, coral reef, jellyfish
                     "http://farm3.static.flickr.com/2030/1505549474_5670617cf7.jpg", # great white shark, grey whale, leatherback turtle
     ]
-    num_images = 32
-    image_urls = take_random_images('datasets/flicker_urls.txt', num_images)
+    #num_images = 32
+    #image_urls = take_random_images('datasets/flicker_urls.txt', num_images)
 
     req_body = { 'input_urls': image_urls,
                  'download_method': 'URL',
@@ -94,7 +117,8 @@ def main():
     
 
     # Call the pipeline action with the tensor optimization
-    response ,elapsed_time = sync_call('pytorch_image_classification', req_body)
+    print(f"\nCalling action '{action_name}' with {len(image_urls)} images")
+    response ,elapsed_time = sync_call(action_name, req_body)
     print('\nRESPONSE:', response)
     inference = json.loads(response)['result']['inference']
     for key in inference:

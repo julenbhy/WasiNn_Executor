@@ -158,3 +158,86 @@ pub fn pass_model(
 
     Ok(())
 }
+
+
+/// Downloads inputs from URLs or S3 URLs and encodes them as base64.
+/// the inputs are saved in the "inputs" field of the parameters.
+pub fn download_inputs(
+    parameters: &mut serde_json::Value
+) -> anyhow::Result<()> {
+
+    let replace_method = parameters["download_method"].as_str();
+
+    match replace_method {
+        Some("URL") => download_inputs_urls_parallel(parameters)?,
+        //Some("S3") => download_inputs_s3_parallel(parameters)?,
+        //Some("MinIO") => download_inputs_minio_async(parameters)?,
+        Some(_) => {
+            eprintln!("Invalid download method provided. Skipping input download.");
+        },
+        None => {
+            eprintln!("No 'download_method' key found. Skipping input download.");
+        }
+    }
+    Ok(())
+}
+use std::thread;
+use std::sync::{ Arc, Mutex };
+use anyhow::anyhow;
+use base64::{engine::general_purpose::STANDARD, Engine as _};
+
+fn download_inputs_urls_parallel(
+    parameters: &mut serde_json::Value
+) -> anyhow::Result<()> {
+    println!("\x1b[31mWASMTIME\x1b[0m Downloading inputs from URLs in parallel...");
+    
+    let input_urls = parameters["input_urls"].as_array()
+        .ok_or_else(|| anyhow!("EXECUTOR ERROR: 'input_urls' must be a list"))?;
+
+    // Create a vector of Mutex<Option<Value>> wrapped in Arc for shared access
+    let encoded_inputs: Arc<Vec<Mutex<Option<serde_json::Value>>>> = Arc::new(
+        (0..input_urls.len()).map(|_| Mutex::new(None)).collect()
+    );
+
+    let mut handles = Vec::with_capacity(input_urls.len());
+
+    for (index, input_url) in input_urls.iter().enumerate() {
+        let url = input_url.as_str()
+            .ok_or_else(|| anyhow!("EXECUTOR ERROR: 'input_urls' contains a non-string value"))?
+            .to_string();
+
+        let encoded_inputs = Arc::clone(&encoded_inputs);
+
+        let handle = thread::spawn(move || -> std::result::Result<(), anyhow::Error> {
+            let bytes = reqwest::blocking::get(&url)?
+                .error_for_status()?
+                .bytes()?.to_vec();
+
+            let encoded = serde_json::Value::String(STANDARD.encode(&bytes));
+            let mut slot = encoded_inputs[index].lock().unwrap();
+            *slot = Some(encoded);
+
+            Ok(())
+        });
+
+        handles.push(handle);
+    }
+
+    // Wait for all threads to finish
+    for handle in handles {
+        handle.join().map_err(|_| anyhow!("Thread error"))??;
+    }
+
+    // Extract the results into a Vec<serde_json::Value>
+    let results: Vec<serde_json::Value> = encoded_inputs.iter()
+        .map(|mutex_opt| {
+            mutex_opt.lock().unwrap()
+                .clone()
+                .ok_or_else(|| anyhow!("Missing encoded input"))
+        })
+        .collect::<std::result::Result<_, anyhow::Error>>()?;
+
+    parameters["inputs"] = serde_json::json!(results);
+
+    Ok(())
+}

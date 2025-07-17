@@ -1,10 +1,10 @@
 use std::io::Cursor;
-use base64::{engine::general_purpose, Engine as _};
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 #[inline(always)]
 pub fn b64_decode(b64_string: String) -> anyhow::Result<Vec<u8>> {
     let time = std::time::Instant::now();
-    let module_bytes: Vec<u8> = general_purpose::STANDARD.decode(b64_string)?;
+    let module_bytes: Vec<u8> = STANDARD.decode(b64_string)?;
     println!("base64 decoding took {} ms", time.elapsed().as_millis());
     Ok(module_bytes)
 }
