@@ -14,7 +14,7 @@ macro_rules! memory_nn_tensors_method {
         static mut MODEL_LEN: usize = 0;
 
         #[no_mangle]
-        pub extern "C" fn alloc_input(size: usize) -> *mut u8 {
+        pub extern "C" fn set_input(size: usize) -> *mut u8 {
             unsafe {
                 INPUT = alloc(Layout::from_size_align(size, 1).unwrap());
                 INPUT_LEN = size;
