@@ -203,11 +203,70 @@ impl WasiNnPipeline {
     }
 
 
+    /// Runs the pipeline by sending input parameters to the first step
+    /// and collecting the output from the last step.
+    /* 
     pub fn run_pipeline(&self, params: serde_json::Value) -> anyhow::Result<serde_json::Value> {
         self.input_tx.send(params)?;
         let out = self.output_rx.recv()?;
         Ok(out)
     }
+    */
+
+    /// Runs the pipeline by sending input parameters to the first step
+    /// and collecting the output from the last step.
+    /// In this version, parameters could contain the "batch_size" parameter,
+    /// if this is the case, the input parameters split into batches
+    /// and each batch is sent to the first step.
+    /// The output is collected from the last step and returned as a JSON value.
+    pub fn run_pipeline(&self, params: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+        
+        // Check if the parameters contain a "batch_size" field
+        if let Some(batch_size) = params.get("batch_size").and_then(|v| v.as_u64()) {
+            println!("\x1b[31mWASMTIME\x1b[0m Running pipeline with batch size: {}", batch_size);
+            self.dispatch_batches(params, batch_size)
+        } else {
+            println!("\x1b[31mWASMTIME\x1b[0m Running pipeline without batching");
+            self.input_tx.send(params)?;
+            let out = self.output_rx.recv()?;
+            Ok(out)
+        }
+    }
+
+    fn dispatch_batches(&self, params: serde_json::Value, batch_size: u64) -> anyhow::Result<serde_json::Value> {
+        let inputs = params.get("inputs")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| anyhow::anyhow!("Parameters must contain an 'inputs' array"))?;
+
+        let batches = inputs.chunks(batch_size as usize);
+        let expected = batches.len();
+        let mut results_map = serde_json::Map::with_capacity(expected);
+
+        // Send each batch to the first step of the pipeline
+        for (batch_idx, batch) in batches.enumerate() {
+            println!("\x1b[31mWASMTIME\x1b[0m Sending batch {} of size: {}", batch_idx, batch.len());
+            self.input_tx.send(serde_json::json!({ "inputs": batch }))?;
+            // FOR DEBUGGING PURPOSES: // Sleep for 5 seconds to allow the pipeline to process the batch
+            //std::thread::sleep(std::time::Duration::from_secs(5));
+        }
+
+        // Receive results from the output channel
+        for i in 0..expected {
+            match self.output_rx.recv() {
+                Ok(result) => {
+                    println!("\x1b[32mWASMTIME\x1b[0m Received result for batch {}", i);
+                    let key = format!("batch_{}", i);
+                    results_map.insert(key, result);
+                }
+                Err(e) => {
+                    eprintln!("Error receiving result: {:?}", e);
+                    return Err(anyhow::anyhow!("Error receiving result: {}", e));
+                }
+            }
+        }
+        Ok(serde_json::Value::Object(results_map))
+    }
+
 
 
     pub fn _stop_pipeline(self) {
@@ -367,7 +426,7 @@ impl WasiNnPipelineStep {
                 InputChannel::Json(receiver) => { // The first step receives JSON input
                     println!("\x1b[31mWASMTIME\x1b[0m Step {}: Waiting for JSON input", step_idx);
                     match receiver.recv() {
-                        Ok(mut value) => { // Received JSON input
+                        Ok(value) => { // Received JSON input
                             parameters["model_index"] = serde_json::Value::Number(serde_json::Number::from(step_idx));
                             parameters["inputs"] = value["inputs"].clone();
 

@@ -84,7 +84,7 @@ def main():
 
     parameters = { 'input_shapes': input_shapes,
                   #'batch_size': image_urls.__len__(),
-                   'batch_size': 9,
+                   'batch_size': 4,
                    'class_labels': class_labels,
                 }
 
@@ -108,13 +108,15 @@ def main():
                     "http://farm1.static.flickr.com/9/76367251_d41e29386c.jpg", # spoonbill, black stork, pelican
                     "http://farm1.static.flickr.com/162/333803097_b56538e5de.jpg", # tench, barracouta, gar
                     "http://farm4.static.flickr.com/3196/3050927387_6374cedf8c.jpg", # goldfish, coral reef, jellyfish
-                    "http://farm3.static.flickr.com/2030/1505549474_5670617cf7.jpg", # great white shark, grey whale, leatherback turtle
+                    #"http://farm3.static.flickr.com/2030/1505549474_5670617cf7.jpg", # great white shark, grey whale, leatherback turtle
     ]
     #num_images = 32
     #image_urls = take_random_images('datasets/flicker_urls.txt', num_images)
 
     req_body = { 'input_urls': image_urls,
-                 'download_method': 'URL' }
+                 'download_method': 'URL',
+                 'batch_size': 4
+               }
 
 
     # Call the pipeline action with the tensor optimization
@@ -123,7 +125,11 @@ def main():
     #print('\nRESPONSE:', response)
     inference = json.loads(response)['result']
     for key in inference:
-        print('\n', key, ':', inference[key])
+        batch = inference[key]
+        print('\n', key, ':')
+        for key2 in batch:
+            print('\n\t', key2, ':', batch[key2])
+    
 
 
     # Sleep 2 seconds and perform a second call to the action
@@ -134,7 +140,11 @@ def main():
     #print('\nRESPONSE:', response)
     inference = json.loads(response)['result']
     for key in inference:
-        print('\n', key, ':', inference[key])
+        batch = inference[key]
+        print('\n', key, ':')
+        for key2 in batch:
+            print('\n\t', key2, ':', batch[key2])
+    
     #'''
 
 
