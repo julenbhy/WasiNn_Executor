@@ -42,7 +42,8 @@ def update_action(action_name: str, zip_path: str, urls: list[str], parameters: 
         action_name,
         zip_path,
         "-a", "model_urls", url_str,
-        "-p", "parameters", param_str  # <- nota: typo copiado del original
+        "-a", "parameters", param_str,
+        #"-p", "parameters", param_str
     ]
 
     try:
@@ -70,12 +71,7 @@ def main():
 
     model_urls = [f"{base_url}/{num_parts}/{i}.pt" for i in range(num_parts)]
 
-    # Generate fake parameters for the action
-    parameters = [f"param_{i}" for i in range(num_parts)]
 
-    # Update the action with the new model URLs
-    print(f"Updating action '{action_name}' with {len(model_urls)} model URLs")
-    update_action(action_name, f"actions/compiled/{action_name}.zip", model_urls, parameters)
 
     # Build the url to the model metadata
     model_metadata_url = f"{base_url}/{num_parts}/info.json"
@@ -85,6 +81,17 @@ def main():
     classes_url = "https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt"
     classes_url_response = urllib.request.urlopen(classes_url)
     class_labels = [line.strip() for line in classes_url_response.read().decode("utf-8").split("\n") if line]
+
+    parameters = { 'input_shapes': input_shapes,
+                  #'batch_size': image_urls.__len__(),
+                   'batch_size': 9,
+                   'class_labels': class_labels,
+                }
+
+
+    # Update the action with the new model URLs
+    print(f"Updating action '{action_name}' with {len(model_urls)} model URLs")
+    update_action(action_name, f"actions/compiled/{action_name}.zip", model_urls, parameters)
 
 
     ### TEST FROM FLICKER DATASET ###
@@ -107,30 +114,34 @@ def main():
     #image_urls = take_random_images('datasets/flicker_urls.txt', num_images)
 
     req_body = { 'input_urls': image_urls,
-                 'download_method': 'URL',
-                 'model': model_urls, 
-                 'input_shapes': input_shapes, 
-                 #'batch_size': image_urls.__len__(),
-                 'batch_size': 7,
-                 'class_labels': class_labels,
-                }
-    
+                 'download_method': 'URL' }
+
 
     # Call the pipeline action with the tensor optimization
     print(f"\nCalling action '{action_name}' with {len(image_urls)} images")
     response ,elapsed_time = sync_call(action_name, req_body)
-    print('\nRESPONSE:', response)
-    inference = json.loads(response)['result']['inference']
+    #print('\nRESPONSE:', response)
+    inference = json.loads(response)['result']
     for key in inference:
-        batch = inference[key]
-        print('\n', key, ':')
-        for key2 in batch:
-            print('\n\t', key2, ':', batch[key2])
-    
+        print('\n', key, ':', inference[key])
 
 
-    metrics = json.loads(response)['result']['metrics']
-    print('\nMETRICS:', metrics)
+    # Sleep 2 seconds and perform a second call to the action
+    #'''
+    time.sleep(2)
+    print(f"\nCalling action '{action_name}' with {len(image_urls)} images second time")
+    response ,elapsed_time = sync_call(action_name, req_body)
+    #print('\nRESPONSE:', response)
+    inference = json.loads(response)['result']
+    for key in inference:
+        print('\n', key, ':', inference[key])
+    #'''
+
+
+
+
+    #metrics = json.loads(response)['result']['metrics']
+    #print('\nMETRICS:', metrics)
 
     print('\nTIME TAKEN:', elapsed_time)
 

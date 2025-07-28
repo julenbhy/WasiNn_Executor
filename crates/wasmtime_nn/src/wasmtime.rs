@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 
-use common::{ActionCapabilities, WasmRuntime};
+use common::{ActionAnnotations, WasmRuntime};
 use wasmtime::{ Engine, Linker, Module, Store, InstancePre, Instance };
 use common::nn_utils::{ NnWasmCtx, link_host_functions, create_store, 
     pass_input, retrieve_result, download_model, pass_model, download_inputs };
@@ -41,7 +41,7 @@ impl WasmRuntime for WasmtimeRuntime {
     fn initialize(
         &self,
         container_id: String,
-        capabilities: ActionCapabilities,
+        annotations: ActionAnnotations,
         module: Vec<u8>,
     ) -> anyhow::Result<()> {
 
@@ -57,11 +57,17 @@ impl WasmRuntime for WasmtimeRuntime {
         let instance_pre = linker.instantiate_pre(&module)?;
 
         // Get model URLs
-        let model_urls = capabilities.model_urls.as_ref()
+        let model_urls = annotations.model_urls.as_ref()
             .ok_or_else(|| anyhow::anyhow!("Model URLs required"))?;
 
+        let parameters = annotations.parameters.clone()
+            .unwrap_or_else(||{
+                    println!("\x1b[31mWASMTIME\x1b[0m No parameters provided");
+                    serde_json::json!({}) 
+                });
+
         // Setup pipeline
-        let pipeline = Arc::new(WasiNnPipeline::new(&self.engine, instance_pre, model_urls)?);
+        let pipeline = Arc::new(WasiNnPipeline::new(&self.engine, instance_pre, model_urls, &parameters)?);
 
         // Store pipeline
         self.pipelines.lock().unwrap().insert(container_id.clone(), pipeline);
@@ -80,24 +86,21 @@ impl WasmRuntime for WasmtimeRuntime {
         mut parameters: serde_json::Value,
     ) -> anyhow::Result<serde_json::Value> {
 
-
         println!("\x1b[31mWASMTIME\x1b[0m Running pipeline for container id '{}'", container_id);
 
-        println!("\x1b[31mWASMTIME\x1b[0m Locking pipelines HashMap for container id '{}'", container_id);
+        // For debugging purposes:
+        // In the first invocation, /init and /run are called consecutively.
+        // Sleep for 5 seconds to allow the pipeline to be ready and don't blend the logs.
+        //std::thread::sleep(std::time::Duration::from_secs(5));
 
         let pipelines = self.pipelines.lock().unwrap();
-
-        println!("\x1b[31mWASMTIME\x1b[0m Getting pipeline for container id '{}'", container_id);
 
         let pipeline = pipelines.get(container_id)
             .ok_or_else(|| anyhow::anyhow!("Pipeline not found: {}", container_id))?
             .clone(); // Clone the Arc, not the pipeline itself
 
-        println!("\x1b[31mWASMTIME\x1b[0m Downloading inputs for container id '{}'", container_id);
-
         download_inputs(&mut parameters)?;
 
-        println!("\x1b[31mWASMTIME\x1b[0m Running pipeline for container id '{}'", container_id);
         let result = pipeline.run_pipeline(parameters)?;
 
         println!("\x1b[31mWASMTIME\x1b[0m Finished running pipeline for container id '{}'", container_id);
@@ -112,13 +115,15 @@ impl WasmRuntime for WasmtimeRuntime {
         &self,
         container_id: &str,
     ) {
-        println!("\x1b[31mWASMTIME\x1b[0m Destroying pipeline for container id '{}'", container_id);
         if let Some(_pipeline) = self.pipelines.lock().unwrap().remove(container_id) {
             //pipeline.stop_pipeline();
         }
         println!("\x1b[31mWASMTIME\x1b[0m Destroyed pipeline for container id '{}'", container_id);
     }
 }
+
+
+
 
 // Input and output channels for each model step
 // The first step receives JSON input, the last step outputs JSON,
@@ -158,10 +163,13 @@ impl WasiNnPipeline {
     pub fn new(
         engine: &Engine,
         instance_pre: InstancePre<NnWasmCtx>,
-        model_urls: &[String]
+        model_urls: &[String],
+        parameters: &serde_json::Value
     ) -> anyhow::Result<WasiNnPipeline> {
-        println!("\x1b[31mWASMTIME\x1b[0m Pipeline: {:?}", model_urls);
 
+        // Create the input and output channels
+        // The first step will receive JSON input, the last step will output JSON
+        // The middle steps will receive and output tensors
         let (initial_tx, initial_rx) = channel::<serde_json::Value>();
         let mut prev_rx_json = Some(initial_rx);
         let (final_tx, final_rx) = channel::<serde_json::Value>();
@@ -170,7 +178,10 @@ impl WasiNnPipeline {
         let mut prev_rx_tensor: Option<Receiver<Tensor>> = None;
         let mut steps = Vec::new();
 
+        // Create a step for each model URL corresponding to a model part
         for (i, url) in model_urls.iter().enumerate() {
+
+            // Get the input and output channels for this step
             let (in_chan, out_chan, next_rx_tensor) = Self::setup_step_channels(
                 i, model_urls.len(), &mut prev_rx_json, &mut prev_tx_json, prev_rx_tensor.take()
             )?;
@@ -178,8 +189,11 @@ impl WasiNnPipeline {
             let engine_c = engine.clone();
             let instance_pre_c = instance_pre.clone();
             let url_c = url.clone();
+            let parameters_c = parameters.clone();
+
+            // Create a new step
             let step = WasiNnPipelineStep::new(
-                i, engine_c, instance_pre_c, url_c, in_chan, out_chan
+                i, engine_c, instance_pre_c, url_c, in_chan, out_chan, parameters_c
             );
             steps.push(step);
             prev_rx_tensor = Some(next_rx_tensor);
@@ -273,21 +287,22 @@ impl WasiNnPipelineStep {
         model_url: String,
         input_channel: InputChannel,
         output_channel: OutputChannel,
+        parameters: serde_json::Value,
     ) -> WasiNnPipelineStep {
 
         let handle = std::thread::spawn(move || {
-            // 1. Crear el Store
+            // 1. Create a new store
             let mut store = create_store(&engine)?;
 
-            // 2. Instanciar el módulo
+            // 2. Instantiate the module
             let instance = instance_pre.instantiate(&mut store)
                 .map_err(|e| anyhow::anyhow!("Step {}: Failed to instantiate WASM module: {}", step_idx, e))?;
 
-            // 3. Descargar el modelo
+            // 3. Download the model
             let model_bytes = download_model(&model_url)
                 .map_err(|e| anyhow::anyhow!("Step {}: Failed to download model: {}", step_idx, e))?;
 
-            // 4. Pasar modelo al WASM
+            // 4. Pass the model to the WASM
             pass_model(&instance, &mut store, model_bytes)
                 .map_err(|e| anyhow::anyhow!("Step {}: Failed to pass model: {}", step_idx, e))?;
 
@@ -295,10 +310,12 @@ impl WasiNnPipelineStep {
             instance.get_typed_func::<(), u32>(&mut store, "build_context")?
                 .call(&mut store, ())?;
 
-            println!("\x1b[31mWASMTIME\x1b[0m Step {}: Context built", step_idx);
+            println!("\x1b[31mWASMTIME\x1b[0m Step {}: Context built successfully", step_idx);
 
-            // 6. Ejecutar el paso
-            Self::run_model_step(step_idx, &instance, &mut store, input_channel, output_channel)
+            // 6. Run the inference logic
+            // This function will keep running until the input channel is closed
+            // It will listen for input, run the inference, and send output to the next step
+            Self::run_model_step(step_idx, &instance, &mut store, input_channel, output_channel, parameters)
                 .map_err(|e| anyhow::anyhow!("Step {}: Failed to run model step: {}", step_idx, e))?;
 
             Ok(())
@@ -315,7 +332,8 @@ impl WasiNnPipelineStep {
         }
     }
 
-
+    // Allow unused code
+    #[allow(dead_code)]
     pub fn join(self) {
         if let Some(handle) = self.handle {
             if let Err(e) = handle.join() {
@@ -340,6 +358,7 @@ impl WasiNnPipelineStep {
         mut store: &mut Store<NnWasmCtx>,
         mut input_channel: InputChannel,
         output_channel: OutputChannel,
+        mut parameters: serde_json::Value
     ) -> anyhow::Result<()> {
         // Main inference loop
         loop {
@@ -349,18 +368,16 @@ impl WasiNnPipelineStep {
                     println!("\x1b[31mWASMTIME\x1b[0m Step {}: Waiting for JSON input", step_idx);
                     match receiver.recv() {
                         Ok(mut value) => { // Received JSON input
-                            println!("\x1b[31mWASMTIME\x1b[0m Step {}: Received JSON input", step_idx);
+                            parameters["model_index"] = serde_json::Value::Number(serde_json::Number::from(step_idx));
+                            parameters["inputs"] = value["inputs"].clone();
 
-                            value["model_index"] = serde_json::Value::Number(serde_json::Number::from(step_idx));
 
-
-                            pass_input(instance, &mut store, &value)
+                            pass_input(instance, &mut store, &parameters)
                                 .map_err(|e| {
                                     eprintln!("Failed to pass input to WASM instance: {:?}", e);
                                     anyhow::anyhow!("Step {}: Failed to pass input to WASM instance: {}", step_idx, e)
                                 })?;
                                 
-
                             let preprocess_fn = instance.get_typed_func::<(), u32>(&mut store, "run_preprocess")
                                 .map_err(|e| {
                                     eprintln!("Failed to get run_preprocess from model: {:?}", e);
@@ -382,7 +399,6 @@ impl WasiNnPipelineStep {
                     println!("\x1b[31mWASMTIME\x1b[0m Step {}: Waiting for tensor input", step_idx);
                     match receiver.recv() {
                         Ok(tensor) => { // Received tensor input
-                            println!("\x1b[31mWASMTIME\x1b[0m Step {}: Received tensor input", step_idx);
                             store.data_mut().wasi_nn().set_input_tensor(0, 0, tensor)?;
                         }
                         Err(e) => { // Input channel closed → end of processing
@@ -419,12 +435,8 @@ impl WasiNnPipelineStep {
                     // The parameters are also passed to the instance in case the user needs
                     // any of them in the postprocess function.
                     // The inputs have been cleared to avoid passing them to the postprocess function
-                    // Generate a new JSON object with the parameters
-                    let mut parameters = serde_json::Value::Object(serde_json::Map::new());
                     parameters["model_index"] = serde_json::Value::Number(serde_json::Number::from(step_idx));
                     pass_input(instance, &mut store, &parameters)?;
-
-                    println!("\x1b[31mWASMTIME\x1b[0m Step {}: Running postprocess", step_idx);
                     
                     // Call the postprocess function to finalize the output
                     let postprocess_fn = instance.get_typed_func::<(), u32>(&mut store, "run_postprocess")
@@ -448,7 +460,7 @@ impl WasiNnPipelineStep {
         }
 
         drop(output_channel); // Close the output channel to propagate end of processing
-        println!("\x1b[31mWASMTIME\x1b[0m Step {}: Finished processing", step_idx);
+        println!("\x1b[31mWASMTIME\x1b[0m Step {}: Finished processing, channel dropped", step_idx);
 
         Ok(()) 
     }

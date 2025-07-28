@@ -22,6 +22,7 @@ wasmtime_nn.workspace = true
 wasmtime.workspace = true
 thiserror.workspace = true
 log.workspace = true
+crossbeam.workspace = true
 
 
 [workspace]
@@ -48,6 +49,7 @@ zip = "4.3.0"
 base64 = "0.22.1"
 log = "0.4"
 reqwest = "0.12.22"
+crossbeam = "0.8.4"
 
 wasmtime = "34.0.1"
 wasmtime-wasi = "34.0.1"

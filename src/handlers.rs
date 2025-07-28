@@ -3,7 +3,7 @@ use tide::log::{info, error};
 use serde_json::json;
 
 use common::{utils, ActivationContext, ActivationInit, WasmRuntime};
-use tokio::task;
+//use tokio::task;
 
 /// POST /:container_id/init
 pub async fn init(

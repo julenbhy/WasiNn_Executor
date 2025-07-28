@@ -75,10 +75,3 @@ $WASMTIME compile "target/wasm32-wasip1/release/examples/$FILENAME.wasm" -o "./a
 
 # Package the .cwasm file into a zip
 zip "./actions/compiled/$FILENAME.zip" "./actions/compiled/$FILENAME.cwasm"
-
-# Deploy to OpenWhisk
-urls='["https://annotation1", "https://annotation2", "https://annotation3"]'
-
-wsk action update --kind wasm:0.1 "$FILENAME" "./actions/compiled/$FILENAME.zip" -a model_urls "$urls" -p parammeters '["parameter1", "parameter2", "parameter3"]'
-
-echo "Action '$FILENAME' updated."

@@ -70,14 +70,20 @@ pub struct ActivationInitInner {
     pub code: String,
     pub binary: bool,
     pub env: HashMap<String, String>,
-    pub annotations: ActionCapabilities,
+    pub annotations: ActionAnnotations,
+}
+
+#[derive(Debug, Deserialize, Serialize, Default)]
+pub struct ActionAnnotations {
+    pub capabilities: Option<ActionCapabilities>,
+    pub parameters: Option<serde_json::Value>,
+    pub model_urls: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct ActionCapabilities {
     pub dir: Option<String>,
-    pub net_access: Option<bool>,
-    pub model_urls: Option<Vec<String>>,
+    pub net_access: Option<bool>
 }
 
 impl Debug for ActivationInitInner {
@@ -123,7 +129,7 @@ pub trait WasmRuntime: Clone {
     fn initialize(
         &self,
         container_id: String,
-        capabilities: ActionCapabilities,
+        capabilities: ActionAnnotations,
         module: Vec<u8>,
     ) -> anyhow::Result<()>;
 
