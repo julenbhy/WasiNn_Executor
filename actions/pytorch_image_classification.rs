@@ -42,36 +42,56 @@ pub fn preprocess(json: Value) -> anyhow::Result<()> {
 
     //println!("FROM WASM: First step, preprocessing input image");
     let tensor_data = preprocess_images(
-        json["inputs"].as_array().ok_or_else(|| anyhow::anyhow!("WASM ERROR: Invalid or missing 'inputs' key"))?,
+        json["inputs"].as_array().ok_or_else(|| {
+            println!("\x1b[32mFROM WASM:\x1b[0m Invalid or missing 'inputs' key");
+            anyhow::anyhow!("WASM ERROR: Invalid or missing 'inputs' key")
+        })?,
         224,
         224,
         &[0.485, 0.456, 0.406],
         &[0.229, 0.224, 0.225],
     ).map_err(|e| {
-        anyhow::anyhow!("WASM ERROR: Failed to preprocess images: {}", e)
+        println!("\x1b[32mFROM WASM:\x1b[0m Failed to preprocess images: {}", e);
+        anyhow::anyhow!("\x1b[32mFROM WASM:\x1b[0m Failed to preprocess images: {}", e)
     })?;
 
     // get the input_shape for the current model part using the model_index
     let model_index = json["model_index"].as_i64()
-        .ok_or_else(|| anyhow::anyhow!("WASM ERROR: Missing 'model_index' key or not a i64"))?;
+        .ok_or_else(|| {
+            println!("\x1b[32mFROM WASM:\x1b[0m Missing 'model_index' key or not a i64");
+            anyhow::anyhow!("W\x1b[32mFROM WASM:\x1b[0m Missing 'model_index' key or not a i64")
+        })?;
 
     let mut input_shape = json["input_shapes"]
         .get((model_index) as usize)
         .and_then(|shape| shape.as_array())
-        .ok_or_else(|| anyhow::anyhow!("WASM ERROR: Invalid or missing 'input_shapes' for model_index"))?
+        .ok_or_else(|| {
+            println!("\x1b[32mFROM WASM:\x1b[0m Invalid or missing 'input_shapes' for model_index");
+            anyhow::anyhow!("\x1b[32mFROM WASM:\x1b[0m Invalid or missing 'input_shapes' for model_index")
+        })?
         .iter()
         .map(|val| val.as_u64().unwrap() as usize)
         .collect::<Vec<usize>>();
-    
-    // Add the batch_size to the input_shape
-    let batch_size = json["batch_size"].as_u64().unwrap(); 
-    input_shape[0] = batch_size as usize;
 
+    // Add the batch_size to the input_shape
+    let batch_size = json["batch_size"].as_u64()
+        .ok_or_else(|| {
+            println!("\x1b[32mFROM WASM:\x1b[0m Missing 'batch_size' key or not a u64");
+            anyhow::anyhow!("\x1b[32mFROM WASM:\x1b[0m Missing 'batch_size' key or not a u64")
+        })?;
+
+    input_shape[0] = batch_size as usize;
+    
     // Set the input tensor. PyTorch models do not use ports, so it is set to 0 here. 
     // Tensors are passed to the model, and the model's forward method processes these tensors.
     let precision = wasi_nn::TensorType::F32;
-    context.set_input(0, precision, &input_shape, &tensor_data)?;
+    context.set_input(0, precision, &input_shape, &tensor_data)
+        .map_err(|e| {
+            println!("\x1b[32mFROM WASM:\x1b[0m Failed to set input tensor: {}", e);
+            anyhow::anyhow!("\x1b[32mFROM WASM:\x1b[0m Failed to set input tensor: {}", e)
+        })?;
 
+    println!("\x1b[32mFROM WASM:\x1b[0m Input tensor set successfully");
     Ok(())
 }
 
@@ -86,8 +106,10 @@ pub fn preprocess(json: Value) -> anyhow::Result<()> {
 pub fn postprocess(json: Value) -> Result<serde_json::Value, anyhow::Error> {
 
     let model_index = json["model_index"].as_i64()
-        .ok_or_else(|| anyhow::anyhow!("WASM ERROR: Missing 'model_index' key or not a i64"))?;
-
+        .ok_or_else(|| {
+            println!("\x1b[32mFROM WASM:\x1b[0m Missing 'model_index' key or not a i64");
+            anyhow::anyhow!("\x1b[32mFROM WASM:\x1b[0m Missing 'model_index' key or not a i64")
+        })?;
 
     // Get the context from the global variable
     let context = unsafe { &mut *CONTEXT };
@@ -97,21 +119,37 @@ pub fn postprocess(json: Value) -> Result<serde_json::Value, anyhow::Error> {
     let mut output_shape = json["input_shapes"]
         .get((model_index + 1) as usize)
         .and_then(|shape| shape.as_array())
-        .ok_or_else(|| anyhow::anyhow!("WASM ERROR: Invalid output shape for model_index"))?
+        .ok_or_else(|| {
+            println!("\x1b[32mFROM WASM:\x1b[0m Invalid output shape for model_index");
+            anyhow::anyhow!("\x1b[32mFROM WASM:\x1b[0m Invalid output shape for model_index")
+        })?
         .iter()
         .map(|val| val.as_u64().unwrap() as usize)
         .collect::<Vec<usize>>();
     
     // Prepare the output buffer
-    let batch_size = json["batch_size"].as_u64().unwrap(); 
+    let batch_size = json["batch_size"].as_u64()
+        .ok_or_else(|| {
+            println!("\x1b[32mFROM WASM:\x1b[0m Missing 'batch_size' key or not a u64");
+            anyhow::anyhow!("\x1b[32mFROM WASM:\x1b[0m Missing 'batch_size' key or not a u64")
+        })?;
+
     output_shape[0] = batch_size as usize;
     let output_size = output_shape.iter().copied().product(); // Multiply all elements of the shape
     let mut output_buffer = vec![0f32; output_size];
 
-    context.get_output(0, &mut output_buffer[..])?;
+    context.get_output(0, &mut output_buffer[..])
+        .map_err(|e| {
+            println!("\x1b[32mFROM WASM:\x1b[0m Failed to get output tensor: {}", e);
+            anyhow::anyhow!("\x1b[32mFROM WASM:\x1b[0m Failed to get output tensor: {}", e)
+        })?;
 
     // Postprocess the output tensor
-    let class_labels = json["class_labels"].as_array().unwrap();
+    let class_labels = json["class_labels"].as_array()
+        .ok_or_else(|| {
+            println!("\x1b[32mFROM WASM:\x1b[0m Invalid or missing 'class_labels' key");
+            anyhow::anyhow!("\x1b[32mFROM WASM:\x1b[0m Invalid or missing 'class_labels' key")
+        })?;
     let result_json = postprocess_images(output_buffer, class_labels, 3);
     Ok(result_json)
 }
@@ -182,7 +220,9 @@ fn preprocess_one(
     tensor_data_f32
 }
 
-fn u8_to_f32_conversion(u8_vec: &[u8]) -> Vec<f32> {
+fn u8_to_f32_conversion(
+    u8_vec: &[u8]
+) -> Vec<f32> {
     let mut f32_vec = Vec::with_capacity(u8_vec.len() / 4);  // 4 bytes for each f32
     for chunk in u8_vec.chunks_exact(4) {
         // Convert each 4 bytes into a f32 value
@@ -231,7 +271,10 @@ fn postprocess_images(
 }
 
 
-fn sort_results(buffer: &[f32]) -> Vec<InferenceResult> {
+fn sort_results(
+    buffer: &[f32]
+) -> Vec<InferenceResult> {
+
     let mut results: Vec<InferenceResult> = buffer
         .iter()
         .enumerate()
