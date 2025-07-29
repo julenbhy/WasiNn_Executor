@@ -72,7 +72,7 @@ impl WasmRuntime for WasmtimeRuntime {
         // Store pipeline
         self.pipelines.lock().unwrap().insert(container_id.clone(), pipeline);
 
-        println!("\x1b[31mWASMTIME\x1b[0m Initialized pipeline for container id '{}'", container_id);
+        //println!("\x1b[31mWASMTIME\x1b[0m Initialized pipeline for container id '{}'", container_id);
         Ok(())
     }
 
@@ -86,7 +86,8 @@ impl WasmRuntime for WasmtimeRuntime {
         mut parameters: serde_json::Value,
     ) -> anyhow::Result<serde_json::Value> {
 
-        println!("\x1b[31mWASMTIME\x1b[0m Running pipeline for container id '{}'", container_id);
+        //println!("\x1b[31mWASMTIME\x1b[0m Running pipeline for container id '{}'", container_id);
+        let start = std::time::Instant::now();
 
         // For debugging purposes:
         // In the first invocation, /init and /run are called consecutively.
@@ -101,9 +102,13 @@ impl WasmRuntime for WasmtimeRuntime {
 
         download_inputs(&mut parameters)?;
 
-        let result = pipeline.run_pipeline(parameters)?;
+        let mut result = pipeline.run_pipeline(parameters)?;
 
-        println!("\x1b[31mWASMTIME\x1b[0m Finished running pipeline for container id '{}'", container_id);
+        let duration = start.elapsed().as_secs_f64();
+        // Add "invocation_time" to the result["metrics"]
+        result["metrics"]["invocation_time"] = duration.into();
+
+        //println!("\x1b[31mWASMTIME\x1b[0m Finished running pipeline for container id '{}'", container_id);
         Ok(result)
     }
 
@@ -118,7 +123,7 @@ impl WasmRuntime for WasmtimeRuntime {
         if let Some(_pipeline) = self.pipelines.lock().unwrap().remove(container_id) {
             //pipeline.stop_pipeline();
         }
-        println!("\x1b[31mWASMTIME\x1b[0m Destroyed pipeline for container id '{}'", container_id);
+        //println!("\x1b[31mWASMTIME\x1b[0m Destroyed pipeline for container id '{}'", container_id);
     }
 }
 
@@ -219,21 +224,41 @@ impl WasiNnPipeline {
     /// if this is the case, the input parameters split into batches
     /// and each batch is sent to the first step.
     /// The output is collected from the last step and returned as a JSON value.
-    pub fn run_pipeline(&self, params: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+    pub fn run_pipeline(
+        &self,
+        params: serde_json::Value
+    ) -> anyhow::Result<serde_json::Value> {
+
+        let start = std::time::Instant::now();
         
         // Check if the parameters contain a "batch_size" field
-        if let Some(batch_size) = params.get("batch_size").and_then(|v| v.as_u64()) {
-            println!("\x1b[31mWASMTIME\x1b[0m Running pipeline with batch size: {}", batch_size);
-            self.dispatch_batches(params, batch_size)
+        let result: serde_json::Value = if let Some(batch_size) = params.get("batch_size").and_then(|v| v.as_u64()) {
+            //println!("\x1b[31mWASMTIME\x1b[0m Running pipeline with batch size: {}", batch_size);
+            self.dispatch_batches(params, batch_size)?
         } else {
-            println!("\x1b[31mWASMTIME\x1b[0m Running pipeline without batching");
+            //println!("\x1b[31mWASMTIME\x1b[0m Running pipeline without batching");
             self.input_tx.send(params)?;
-            let out = self.output_rx.recv()?;
-            Ok(out)
-        }
+            self.output_rx.recv()?
+        };
+
+        let duration = start.elapsed().as_secs_f64();
+
+        let output = serde_json::json!({
+            "inference": result,
+            "metrics": {
+                "pipeline_time": duration
+            }
+        });
+
+        Ok(output)
     }
 
-    fn dispatch_batches(&self, params: serde_json::Value, batch_size: u64) -> anyhow::Result<serde_json::Value> {
+    fn dispatch_batches(
+        &self,
+        params: serde_json::Value, 
+        batch_size: u64
+    ) -> anyhow::Result<serde_json::Value> {
+        
         let inputs = params.get("inputs")
             .and_then(|v| v.as_array())
             .ok_or_else(|| anyhow::anyhow!("Parameters must contain an 'inputs' array"))?;
@@ -244,7 +269,7 @@ impl WasiNnPipeline {
 
         // Send each batch to the first step of the pipeline
         for (batch_idx, batch) in batches.enumerate() {
-            println!("\x1b[31mWASMTIME\x1b[0m Sending batch {} of size: {}", batch_idx, batch.len());
+            //println!("\x1b[31mWASMTIME\x1b[0m Sending batch {} of size: {}", batch_idx, batch.len());
             self.input_tx.send(serde_json::json!({ "inputs": batch }))?;
             // FOR DEBUGGING PURPOSES: // Sleep for 5 seconds to allow the pipeline to process the batch
             //std::thread::sleep(std::time::Duration::from_secs(5));
@@ -254,7 +279,7 @@ impl WasiNnPipeline {
         for i in 0..expected {
             match self.output_rx.recv() {
                 Ok(result) => {
-                    println!("\x1b[32mWASMTIME\x1b[0m Received result for batch {}", i);
+                    //println!("\x1b[32mWASMTIME\x1b[0m Received result for batch {}", i);
                     let key = format!("batch_{}", i);
                     results_map.insert(key, result);
                 }
@@ -369,7 +394,7 @@ impl WasiNnPipelineStep {
             instance.get_typed_func::<(), u32>(&mut store, "build_context")?
                 .call(&mut store, ())?;
 
-            println!("\x1b[31mWASMTIME\x1b[0m Step {}: Context built successfully", step_idx);
+            //println!("\x1b[31mWASMTIME\x1b[0m Step {}: Context built successfully", step_idx);
 
             // 6. Run the inference logic
             // This function will keep running until the input channel is closed
@@ -424,7 +449,7 @@ impl WasiNnPipelineStep {
             // 3. Receive input for this step
             match &mut input_channel {
                 InputChannel::Json(receiver) => { // The first step receives JSON input
-                    println!("\x1b[31mWASMTIME\x1b[0m Step {}: Waiting for JSON input", step_idx);
+                    //println!("\x1b[31mWASMTIME\x1b[0m Step {}: Waiting for JSON input", step_idx);
                     match receiver.recv() {
                         Ok(value) => { // Received JSON input
                             parameters["model_index"] = serde_json::Value::Number(serde_json::Number::from(step_idx));
@@ -455,7 +480,7 @@ impl WasiNnPipelineStep {
                     }
                 },
                 InputChannel::Tensor(receiver) => { // Middle and last steps receive tensor input
-                    println!("\x1b[31mWASMTIME\x1b[0m Step {}: Waiting for tensor input", step_idx);
+                    //println!("\x1b[31mWASMTIME\x1b[0m Step {}: Waiting for tensor input", step_idx);
                     match receiver.recv() {
                         Ok(tensor) => { // Received tensor input
                             store.data_mut().wasi_nn().set_input_tensor(0, 0, tensor)?;
@@ -469,7 +494,7 @@ impl WasiNnPipelineStep {
             }
 
             // 4. Run inference
-            println!("\x1b[31mWASMTIME\x1b[0m Step {}: Running inference", step_idx);
+            //println!("\x1b[31mWASMTIME\x1b[0m Step {}: Running inference", step_idx);
             let compute_fn = instance.get_typed_func::<(), u32>(&mut store, "compute")
                 .map_err(|e| {
                     eprintln!("Failed to get compute from model: {:?}", e);
@@ -485,11 +510,11 @@ impl WasiNnPipelineStep {
             match output_channel {
                 OutputChannel::Tensor(ref sender) => { // Extract tensor from WASI-NN and send it to the next step
                     let output_tensor = store.data_mut().wasi_nn().get_output_tensor(0, 0)?;
-                    println!("\x1b[31mWASMTIME\x1b[0m Step {}: Sending tensor output", step_idx);
+                    //println!("\x1b[31mWASMTIME\x1b[0m Step {}: Sending tensor output", step_idx);
                     sender.send(output_tensor)?;
                 }
                 OutputChannel::Json(ref sender) => { // Retrieve final JSON output and send it to the final channel
-                    println!("\x1b[31mWASMTIME\x1b[0m Step {}: Postprocessing", step_idx);
+                    //println!("\x1b[31mWASMTIME\x1b[0m Step {}: Postprocessing", step_idx);
 
                     // The parameters are also passed to the instance in case the user needs
                     // any of them in the postprocess function.
@@ -512,7 +537,7 @@ impl WasiNnPipelineStep {
                     // Retrieve the final output JSON from the WASI-NN context
                     let output_json = retrieve_result(instance, &mut store)?;
 
-                    println!("\x1b[31mWASMTIME\x1b[0m Step {}: Sending JSON output", step_idx);
+                    //println!("\x1b[31mWASMTIME\x1b[0m Step {}: Sending JSON output", step_idx);
                     sender.send(output_json)?;
                 }
             }
