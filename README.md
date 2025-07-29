@@ -50,9 +50,12 @@ cargo run --release
 ```
 
 **_NOTE:_**  Take care you will need to install torch 2.4.0 to use the wasi-nn invoker:
+
+For using torch:
 ```sh
-export LIBTORCH_USE_PYTORCH=1
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/Downloads/libtorch-shared-with-deps-2.4.0+cu118/libtorch/lib
+
+export LIBTORCH=$HOME/libtorch-2.4.0/libtorch
+export LD_LIBRARY_PATH=$LIBTORCH/lib:$LD_LIBRARY_PATH
 ```
 
 4. Next, build the `pytorch_image_classification` example with:
