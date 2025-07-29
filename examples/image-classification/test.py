@@ -123,7 +123,7 @@ def main():
     print(f"\nCalling action '{action_name}' with {len(image_urls)} images")
     response ,elapsed_time = sync_call(action_name, req_body)
     #print('\nRESPONSE:', response)
-    inference = json.loads(response)['result']
+    inference = json.loads(response)['result']['inference']
     for key in inference:
         batch = inference[key]
         print('\n', key, ':')
@@ -138,7 +138,7 @@ def main():
     print(f"\nCalling action '{action_name}' with {len(image_urls)} images second time")
     response ,elapsed_time = sync_call(action_name, req_body)
     #print('\nRESPONSE:', response)
-    inference = json.loads(response)['result']
+    inference = json.loads(response)['result']['inference']
     for key in inference:
         batch = inference[key]
         print('\n', key, ':')
@@ -150,8 +150,8 @@ def main():
 
 
 
-    #metrics = json.loads(response)['result']['metrics']
-    #print('\nMETRICS:', metrics)
+    metrics = json.loads(response)['result']['metrics']
+    print('\nMETRICS:', metrics)
 
     print('\nTIME TAKEN:', elapsed_time)
 
