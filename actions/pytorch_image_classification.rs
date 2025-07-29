@@ -12,7 +12,7 @@ static mut CONTEXT: *mut GraphExecutionContext = std::ptr::null_mut();
 
 #[no_mangle]
 pub extern "C" fn build_context() -> anyhow::Result<()> {
-    println!("\x1b[32mFROM WASM:\x1b[0m Building context for PyTorch model...");
+    //println!("\x1b[32mFROM WASM:\x1b[0m Building context for PyTorch model...");
     let model_bytes = unsafe { std::slice::from_raw_parts(MODEL, MODEL_LEN) };
     unsafe {
         // Create the graph and assign it to the global variable
@@ -29,18 +29,17 @@ pub extern "C" fn build_context() -> anyhow::Result<()> {
 
 
 
-// If this is the first model part, the input tensor should be loaded from the payload json
+// If this is the first model part, the input images should be loaded from the payload json
 // The input tensor will be preprocessed and set as the input tensor for the model
 // If this is not the first model part, the intermediate tensor will already be set as the input tensor
 // from the embedder
 #[no_mangle]
 pub fn preprocess(json: Value) -> anyhow::Result<()> {
-    println!("\x1b[32mFROM WASM:\x1b[0m Preprocessing input tensor...");
+    //println!("\x1b[32mFROM WASM:\x1b[0m Preprocessing input images...");
     
     // Get the context from the global variable
     let context = unsafe { &mut *CONTEXT };
 
-    //println!("FROM WASM: First step, preprocessing input image");
     let tensor_data = preprocess_images(
         json["inputs"].as_array().ok_or_else(|| {
             println!("\x1b[32mFROM WASM:\x1b[0m Invalid or missing 'inputs' key");
@@ -91,7 +90,7 @@ pub fn preprocess(json: Value) -> anyhow::Result<()> {
             anyhow::anyhow!("\x1b[32mFROM WASM:\x1b[0m Failed to set input tensor: {}", e)
         })?;
 
-    println!("\x1b[32mFROM WASM:\x1b[0m Input tensor set successfully");
+    //println!("\x1b[32mFROM WASM:\x1b[0m Input images set successfully");
     Ok(())
 }
 
@@ -158,6 +157,7 @@ pub fn postprocess(json: Value) -> Result<serde_json::Value, anyhow::Error> {
 /* PREPROCESS RELATED FUNCTIONS */
 
 // Transform a list of images into a batch tensor
+#[allow(deprecated)]
 fn preprocess_images(
     images_base64: &[serde_json::Value],
     height: u32,
