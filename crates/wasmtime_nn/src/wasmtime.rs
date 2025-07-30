@@ -383,7 +383,7 @@ impl WasiNnPipelineStep {
                 .map_err(|e| anyhow::anyhow!("Step {}: Failed to instantiate WASM module: {}", step_idx, e))?;
 
             // 3. Download the model
-            let model_bytes = get_model(&model_url, "model_cache")
+            let model_bytes = get_model(&model_url, "/tmp/model_cache")
                 .map_err(|e| anyhow::anyhow!("Step {}: Failed to download model: {}", step_idx, e))?;
 
             // 4. Pass the model to the WASM
