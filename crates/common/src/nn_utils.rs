@@ -115,7 +115,8 @@ pub fn retrieve_result(
 
 
 /// Downloads the model from the provided URL and returns its bytes.
-pub fn download_model(
+/* 
+pub fn get_model(
     model_url: &str,
 ) -> anyhow::Result<Vec<u8>> {
     // Download the model from the URL
@@ -133,7 +134,53 @@ pub fn download_model(
 
     Ok(model_bytes)
 }
+*/
+/// Downloads a model from the provided URL and passes it to the WebAssembly instance memory.
+/// The model is cached for future use.
+/// The module must export a function called `set_model` that returns a pointer to write the model.
+pub fn get_model(
+    model_url: &str,
+    model_cache_path: &str,
+) -> anyhow::Result<Vec<u8>> {
 
+    // Check if the model is already in the disk cache
+    // The model is stored in the "./model_cache" directory with a hash-based filename.
+    let model_bytes = 
+        if {
+            let path = join_cache_path(&model_url, model_cache_path);
+            path.exists()
+        } {
+            let path = join_cache_path(&model_url, model_cache_path);
+            println!("Model {} found on cache. Loading...", model_url);
+            let bytes = std::fs::read(&path)?;
+            bytes
+        } else {
+            println!("Model {} not found on cache. Downloading...", model_url);
+            let bytes = reqwest::blocking::get(model_url)
+                .map_err(|e| anyhow::anyhow!("Failed to download model from {}: {}", model_url, e))?
+                .error_for_status()?
+                .bytes()
+                .map_err(|e| anyhow::anyhow!("Failed to read model bytes: {}", e))?
+                .to_vec();
+            // Save the model bytes to cache
+            let path = join_cache_path(&model_url, model_cache_path);
+            std::fs::create_dir_all(path.parent().unwrap())?;
+            std::fs::write(&path, &bytes)?;
+            bytes
+        };
+    Ok(model_bytes)
+}
+
+use fasthash::metro;
+use std::path::{Path, PathBuf};
+fn join_cache_path(
+    model_url: &str,
+    model_cache_path: &str
+) -> PathBuf {
+    let hash = metro::hash64(model_url.as_bytes());
+    let filename = format!("{:016x}.bin", hash);
+    Path::new(model_cache_path).join(filename)
+}
 
 /// Writes the model bytes to the WASM memory.
 /// Requires the WASM instance to export a `set_model` function

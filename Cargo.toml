@@ -50,6 +50,7 @@ base64 = "0.22.1"
 log = "0.4"
 reqwest = "0.12.22"
 crossbeam = "0.8.4"
+fasthash = "0.4.0"
 
 wasmtime = "34.0.1"
 wasmtime-wasi = "34.0.1"

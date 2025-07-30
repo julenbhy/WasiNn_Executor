@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use common::{ActionAnnotations, WasmRuntime};
 use wasmtime::{ Engine, Linker, Module, Store, InstancePre, Instance };
 use common::nn_utils::{ NnWasmCtx, link_host_functions, create_store, 
-    pass_input, retrieve_result, download_model, pass_model, download_inputs };
+    pass_input, retrieve_result, get_model, pass_model, download_inputs };
 
 pub struct WasmtimeRuntime {
     pub engine: Engine,
@@ -268,7 +268,7 @@ impl WasiNnPipeline {
         let mut results_map = serde_json::Map::with_capacity(expected);
 
         // Send each batch to the first step of the pipeline
-        for (batch_idx, batch) in batches.enumerate() {
+        for (_batch_idx, batch) in batches.enumerate() {
             //println!("\x1b[31mWASMTIME\x1b[0m Sending batch {} of size: {}", batch_idx, batch.len());
             self.input_tx.send(serde_json::json!({ "inputs": batch }))?;
             // FOR DEBUGGING PURPOSES: // Sleep for 5 seconds to allow the pipeline to process the batch
@@ -383,7 +383,7 @@ impl WasiNnPipelineStep {
                 .map_err(|e| anyhow::anyhow!("Step {}: Failed to instantiate WASM module: {}", step_idx, e))?;
 
             // 3. Download the model
-            let model_bytes = download_model(&model_url)
+            let model_bytes = get_model(&model_url, "model_cache")
                 .map_err(|e| anyhow::anyhow!("Step {}: Failed to download model: {}", step_idx, e))?;
 
             // 4. Pass the model to the WASM
