@@ -53,7 +53,8 @@ cargo run --release
 
 For using torch:
 ```sh
-
+sudo apt install libarchive-tools
+mkdir -p "$HOME/libtorch-2.4.0" && wget -qO- "https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.4.0%2Bcpu.zip" | bsdtar -xvf- -C "$HOME/libtorch-2.4.0"
 export LIBTORCH=$HOME/libtorch-2.4.0/libtorch
 export LD_LIBRARY_PATH=$LIBTORCH/lib:$LD_LIBRARY_PATH
 ```
