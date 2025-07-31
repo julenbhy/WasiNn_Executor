@@ -28,7 +28,6 @@ pub fn link_host_functions(
     Ok(())
 }
 
-//use wasmtime_wasi_nn::backend::pytorch::PytorchBackend;
 /// Creates a new WebAssembly store with the provided engine and initializes
 /// a custom context (`WasmCtx`) that includes WASI and WASI-NN support.
 pub fn create_store(
@@ -38,11 +37,11 @@ pub fn create_store(
     let wasi = WasiCtxBuilder::new()
         .inherit_stdio()
         .inherit_stderr()
-        .preopened_dir("/tmp", "/tmp", DirPerms::all(), FilePerms::all()).unwrap()
+        .preopened_dir("/tmp", "/tmp", DirPerms::all(), FilePerms::all())?
         .build_p1();
 
     //let graph = vec![("pytorch".to_string(), "models".to_string())]; // Convert to Vec<(String, String)>
-    let (backends, registry) = wasmtime_wasi_nn::preload(&[]).unwrap();
+    let (backends, registry) = wasmtime_wasi_nn::preload(&[])?;
     let wasi_nn = WasiNnCtx::new(backends, registry);
 
     let wasm_ctx = NnWasmCtx::new(wasi, wasi_nn);
@@ -285,6 +284,77 @@ fn download_inputs_urls_parallel(
         .collect::<std::result::Result<_, anyhow::Error>>()?;
 
     parameters["inputs"] = serde_json::json!(results);
+
+    Ok(())
+}
+
+
+
+
+
+
+/// Creates a new WebAssembly store with the provided engine and initializes
+/// a custom context (`WasmCtx`) that includes WASI and WASI-NN support.
+/// This function also preloads the model from the specified URL.
+pub fn create_store_with_model(
+    engine: &Engine,
+    model_url: &str
+) -> anyhow::Result<Store<NnWasmCtx>> {
+
+    let wasi = WasiCtxBuilder::new()
+        .inherit_stdio()
+        .inherit_stderr()
+        .preopened_dir("/tmp", "/tmp", DirPerms::all(), FilePerms::all())?
+        .build_p1();
+
+    println!("\x1b[31m\n\n AQUIIIII WASMTIME\x1b[0m");
+
+    let model_dir = "models";
+
+    // Replace the "/" for "_" in the model URL to create a subdirectory name
+    let model_name = model_url.replace("/", "_");
+    let model_subdir = format!("{}/{}", model_dir, model_name);
+    let model_path = format!("{}/model.pt", model_subdir);
+
+    println!("Model path: {}", model_path);
+
+    download_model(model_url, &model_path)?;
+
+    let graph = vec![("pytorch".to_string(), model_subdir.clone())];
+    let (backends, registry) = wasmtime_wasi_nn::preload(&graph)?;
+
+    println!("\x1b[31mYAAAAAAA\n\n\x1b[0m");
+    let wasi_nn = WasiNnCtx::new(backends, registry);
+    let wasm_ctx = NnWasmCtx::new(wasi, wasi_nn);
+
+    Ok(Store::new(engine, wasm_ctx))
+}
+
+
+/// Downloads a model from the provided URL and saves it to the specified path.
+/// If the model already exists in the cache, it will not be downloaded again.
+/// The model is saved in the "./models/model_name/model.pt" file.
+fn download_model(
+    model_url: &str,
+    model_path: &str
+) -> anyhow::Result<()> {
+    // Check if the model is already in the disk cache
+    if std::path::Path::new(model_path).exists() {
+        println!("Model {} found on cache. Loading...", model_url);
+        return Ok(());
+    }
+
+    println!("Model {} not found on cache. Downloading...", model_url);
+    let bytes = reqwest::blocking::get(model_url)
+        .map_err(|e| anyhow::anyhow!("Failed to download model from {}: {}", model_url, e))?
+        .error_for_status()?
+        .bytes()
+        .map_err(|e| anyhow::anyhow!("Failed to read model bytes: {}", e))?
+        .to_vec();
+
+    // Save the model bytes to cache
+    std::fs::create_dir_all(std::path::Path::new(model_path).parent().unwrap())?;
+    std::fs::write(model_path, &bytes)?;
 
     Ok(())
 }
